@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>ГДЕ АРТИКЛЬ?! — витрина графики и звука</title>
+<link rel="stylesheet" href="../src/css/base.css">
+<link rel="stylesheet" href="../src/css/theme.css">
+<style>
+  :root { --bg-deep:#0e1310; --dim:#9aa79a; }
+  * { box-sizing: border-box; }
+  /* витрина — прокручиваемая страница, а не игра: снимаем базовые overflow/height */
+  html, body { margin: 0; height: auto !important; overflow: auto !important; }
+  body { padding: 10px 14px 30px; font-family: 'Segoe UI','Noto Sans Armenian',Arial,sans-serif; }
+  h1 { font-size: 18px; margin: 0 0 1px; color: var(--warm); letter-spacing: .4px; }
+  h1 small { color: var(--ink-pale); font-size: 11px; font-weight: 400; letter-spacing: 0; }
+  p.hint { color: #7d8b7e; font-size: 10.5px; margin: 2px 0 0; }
+  h2 { font-size: 11.5px; text-transform: uppercase; letter-spacing: 1.3px; color: #cfe3cd; margin: 14px 0 7px; border-bottom: 1px solid var(--line); padding-bottom: 3px; }
+  h2 .tag { color: #6f7f70; font-size: 9px; letter-spacing: .5px; text-transform: none; margin-left: 6px; }
+  .grid { display: flex; flex-wrap: wrap; gap: 5px; align-items: flex-start; }
+  .cell { background: var(--panel); border: 1px solid var(--line); border-radius: 7px; padding: 3px 3px 1px; }
+  .cell canvas { display: block; background: #24332b; border-radius: 4px; }
+  .cell b { display: block; font-size: 8px; font-weight: 600; color: var(--dim); text-align: center; padding-top: 1px; letter-spacing: .2px; }
+  .demo { display: flex; gap: 14px; flex-wrap: wrap; align-items: flex-start; background: rgba(0,0,0,.22); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+  .demo-col { display: flex; flex-direction: column; gap: 8px; }
+  .demo-col .cap { font-size: 9px; color: var(--ink-pale); text-transform: uppercase; letter-spacing: 1px; }
+  .btn-row { display: flex; gap: 7px; flex-wrap: wrap; align-items: center; }
+  /* бабблы в витрине показываем статичной лентой, вне сцены */
+  .bub-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; }
+  .bub-row .bubble {
+    position: static !important; display: inline-block; opacity: 1 !important; transform: none !important;
+    max-width: 230px; font-size: 11px; padding: 5px 8px 6px; border-width: 2px; box-shadow: 2px 3px 0 rgba(0,0,0,.35);
+  }
+  .bub-row .bubble::after, .bub-row .bubble::before { display: none; }
+  .bub-row .bubble .who { font-size: 8px; margin-bottom: 1px; }
+  .audio-grid { display: grid; grid-template-columns: repeat(6, minmax(0,1fr)); gap: 4px; }
+  .audio-grid .btn { min-height: 24px; padding: 2px 4px; font-size: 9.5px; border-radius: 5px; }
+  .paper-demo { transform: scale(.72); transform-origin: left top; margin-bottom: -34px; }
+  .muted-chip { font-size: 10px; color: var(--ink-pale); }
+  #errors { position: fixed; right: 10px; bottom: 10px; background: #401; border: 1px solid #a33; padding: 7px 9px; border-radius: 8px; font: 11px monospace; white-space: pre-wrap; max-width: 44vw; display: none; z-index: 99; }
+</style>
+</head>
+<body>
+<h1>ГДЕ АРТИКЛЬ?! · витрина графики и звука <small>G.art + G.audio + theme.css · без внешних ресурсов</small></h1>
+<p class="hint">?only=teacher,students,articles,letters,props,classroom,theme,audio,paint,zteacher,zstudents,zarticles,zletters,zprops,zclass — фильтр секций</p>
+
+<h2>1. Учительница — 9 настроений <span class="tag">drawTeacher</span></h2>
+<div class="grid" id="teacher"></div>
+
+<h2>2. Ученики — Толя / Вика / Гоша, 9 настроений <span class="tag">drawStudent(ctx,r,idx,mood,t)</span></h2>
+<div class="grid" id="students"></div>
+
+<h2>3. Живые артикли ը и ն <span class="tag">drawArticle</span></h2>
+<div class="grid" id="articles"></div>
+
+<h2>4. Живые буквы <span class="tag">drawLetter — реальные глифы + лицо</span></h2>
+<div class="grid" id="letters"></div>
+
+<h2>5. Реквизит <span class="tag">drawProp: police pigeon homework protocol clock cap stamp article</span></h2>
+<div class="grid" id="props"></div>
+
+<h2>6. Класс <span class="tag">drawClassroom(ctx,w,h,t,{boardText})</span></h2>
+<div class="grid" id="classroom"></div>
+
+<h2>7. Скины theme.css: кнопки, бабблы, бумага <span class="tag">.btn .bubble .paper .card .seal</span></h2>
+<div id="theme"></div>
+
+<h2>8. Звук — кнопка на каждый SFX <span class="tag">G.audio.sfx(name) · WebAudio, синтез</span></h2>
+<div id="audio"></div>
+
+<h2>9. Готовые спрайты paint(canvas,…) <span class="tag">idle-спрайты для DOM</span></h2>
+<div class="grid" id="paints"></div>
+
+<h2>10. ZOOM: учительница</h2>
+<div class="grid" id="zteacher"></div>
+<h2>11. ZOOM: ученики</h2>
+<div class="grid" id="zstudents"></div>
+<h2>12. ZOOM: артикли</h2>
+<div class="grid" id="zarticles"></div>
+<h2>13. ZOOM: буквы</h2>
+<div class="grid" id="zletters"></div>
+<h2>14. ZOOM: реквизит</h2>
+<div class="grid" id="zprops"></div>
+<h2>15. ZOOM: класс</h2>
+<div class="grid" id="zclass"></div>
+
+<div id="errors"></div>
+<script src="../src/js/02-art.js"></script>
+<script src="../src/js/03-audio.js"></script>
+<script>
+(function () {
+  'use strict';
+  var errBox = document.getElementById('errors');
+  var errors = [];
+  function report(e) {
+    errors.push(String(e && (e.stack || e.message) || e));
+    errBox.style.display = 'block';
+    errBox.textContent = errors.slice(-6).join('\n');
+  }
+  window.addEventListener('error', function (e) { report(e.error || e.message); });
+
+  var ALL_KEYS = ['teacher', 'students', 'articles', 'letters', 'props', 'classroom', 'theme', 'audio', 'paints', 'zteacher', 'zstudents', 'zarticles', 'zletters', 'zprops', 'zclass'];
+  var only = null;
+  try { only = new URLSearchParams(location.search).get('only'); } catch (e) {}
+  if (only) {
+    only = only.split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+    ALL_KEYS.forEach(function (k) {
+      if (only.indexOf(k) < 0) {
+        var el = document.getElementById(k);
+        if (el) { var h = el.previousElementSibling; if (h) h.style.display = 'none'; el.style.display = 'none'; }
+      }
+    });
+  }
+  function visible(id) { var el = document.getElementById(id); return el && el.style.display !== 'none' && el.children.length >= 0; }
+
+  var A = window.G && window.G.art;
+  if (!A) { report('G.art не найден — 02-art.js не загрузился'); return; }
+  var AU = window.G && window.G.audio;
+  var DPR = 2;
+  var draws = [];
+
+  function cell(parent, w, h, label, draw) {
+    var wrap = document.createElement('div');
+    wrap.className = 'cell';
+    var cv = document.createElement('canvas');
+    cv.style.width = w + 'px'; cv.style.height = h + 'px';
+    cv.width = w * DPR; cv.height = h * DPR;
+    wrap.appendChild(cv);
+    if (label) { var b = document.createElement('b'); b.textContent = label; wrap.appendChild(b); }
+    parent.appendChild(wrap);
+    var ctx = cv.getContext('2d');
+    draws.push(function (t) {
+      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+      ctx.clearRect(0, 0, w, h);
+      try { draw(ctx, { x: 0, y: 0, w: w, h: h }, t); } catch (e) { report(e); }
+    });
+  }
+  function add(parent, w, h, label, draw) { cell(parent, w, h, label, draw); }
+  function g(id) { return document.getElementById(id); }
+  function on(id) { return visible(id); }
+
+  var S = {
+    T: 84, St: 66, Art: 66, Let: 54, Prop: 76
+  };
+
+  // 1. учительница
+  if (on('teacher')) A.moods.teacher.forEach(function (m) {
+    add(g('teacher'), S.T, S.T, m, function (ctx, r, t) { A.drawTeacher(ctx, r, m, t); });
+  });
+
+  // 2. ученики
+  if (on('students')) ['Толя', 'Вика', 'Гоша'].forEach(function (nm, idx) {
+    A.moods.student.forEach(function (m) {
+      add(g('students'), S.St, S.St, nm[0] + '·' + m, function (ctx, r, t) { A.drawStudent(ctx, r, idx, m, t); });
+    });
+  });
+
+  // 3. артикли
+  if (on('articles')) A.moods.article.forEach(function (m) {
+    ['ը', 'ն'].forEach(function (gl) {
+      add(g('articles'), S.Art, S.Art, gl + '·' + m, function (ctx, r, t) { A.drawArticle(ctx, r, m, t, { glyph: gl }); });
+    });
+  });
+
+  // 4. буквы
+  if (on('letters')) {
+    var letterGroups = [['բ', 'պ', 'փ'], ['ռ', 'ր'], ['ձ', 'ծ', 'ց'], ['ջ', 'ճ', 'չ'], ['դ', 'տ'], ['գ', 'կ', 'ք'], ['ը', 'ն'], ['հ', 'ց']];
+    var lm = ['neutral', 'happy', 'angry', 'scared', 'smug', 'evil', 'cry', 'panic'];
+    var li = 0;
+    letterGroups.forEach(function (group) {
+      group.forEach(function (gl) {
+        var m = lm[li % lm.length]; li++;
+        add(g('letters'), S.Let, S.Let, gl + '·' + m, function (ctx, r, t) { A.drawLetter(ctx, r, gl, m, t); });
+      });
+    });
+  }
+
+  // 5. реквизит
+  if (on('props')) {
+    A.drawPropNames.forEach(function (name) {
+      add(g('props'), S.Prop, S.Prop, name, function (ctx, r, t) { A.drawProp(ctx, name, r, t, {}); });
+    });
+    add(g('props'), S.Prop, S.Prop, 'police·мин.', function (ctx, r, t) { A.drawProp(ctx, 'police', r, t, { minister: true }); });
+    add(g('props'), S.Prop, S.Prop, 'article·happy', function (ctx, r, t) { A.drawProp(ctx, 'article', r, t, { mood: 'happy' }); });
+  }
+
+  // 6. класс
+  if (on('classroom')) {
+    cell(g('classroom'), 470, 250, 'classroom 470x250 · ԳԻՐՔ', function (ctx, r, t) { A.drawClassroom(ctx, r.w, r.h, t, { boardText: 'ԳԻՐՔ' }); });
+    cell(g('classroom'), 250, 210, 'classroom 250x210 (узкий)', function (ctx, r, t) { A.drawClassroom(ctx, r.w, r.h, t, { boardText: 'ԳԻՐՔ' }); });
+    cell(g('classroom'), 470, 120, 'classroom 470x120 · dim', function (ctx, r, t) { A.drawClassroom(ctx, r.w, r.h, t, { boardText: 'ԳԻՐՔ\n?', dim: 0.4 }); });
+  }
+
+  // 7. тема
+  if (on('theme')) {
+    var th = g('theme');
+    th.className = 'demo';
+    th.innerHTML =
+      '<div class="demo-col" style="min-width:300px">' +
+        '<div class="cap">кнопки</div>' +
+        '<div class="btn-row">' +
+          '<button class="btn">Обычная</button>' +
+          '<button class="btn btn--primary">НАЧАТЬ УРОК</button>' +
+          '<button class="btn btn--danger">ГДЕ АРТИКЛЬ?!</button>' +
+          '<button class="btn btn--ghost">Пропустить</button>' +
+          '<button class="btn btn--small btn--primary">Я ПОНЯЛ</button>' +
+        '</div>' +
+        '<div class="cap">бабблы персонажей</div>' +
+        '<div class="bub-row">' +
+          '<div class="bubble teacher show"><span class="who">Ануш Валерьевна</span><span class="txt">ГДЕ АРТИКЛЬ?!</span></div>' +
+          '<div class="bubble tolya show"><span class="who">Толя</span><span class="txt">Я же знал это слово!</span></div>' +
+          '<div class="bubble vika show"><span class="who">Вика</span><span class="txt">Я это знала.</span></div>' +
+          '<div class="bubble gosha show"><span class="who">Гоша</span><span class="txt">(шёпот из-за растения)</span></div>' +
+          '<div class="bubble article show"><span class="who">Артикль Ը</span><span class="txt">Я не приложение!</span></div>' +
+          '<div class="bubble police show"><span class="who">Полицейский</span><span class="txt">Протокол №47.</span></div>' +
+          '<div class="bubble system show"><span class="who">СИСТЕМА</span><span class="txt">СИСТЕМА: урок офлайн</span></div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="demo-col">' +
+        '<div class="cap">бумага / карточка / печать</div>' +
+        '<div class="paper-demo"><div class="paper paper--protocol" style="width:250px;padding:10px 12px;font-size:10px">' +
+          '<b>ПРОТОКОЛ №47</b><br>артикль отсутствует.<br>слово цело.<br><span class="red">ВИНОВАТ ИГРОК</span>' +
+        '</div></div>' +
+        '<div class="card" style="width:250px;padding:8px 10px;font-size:10px">карточка: <b>Мы это уже проходили</b></div>' +
+      '</div>' +
+      '<div class="demo-col" style="align-items:center">' +
+        '<div class="cap">штамп / HUD</div>' +
+        '<div class="seal">Ը</div>' +
+        '<div class="btn-row"><span class="hud-chip">Ошибки <b>3</b></span><span class="badge">47</span><span class="badge badge--gold">УРОК</span></div>' +
+      '</div>';
+  }
+
+  // 8. звук
+  if (on('audio')) {
+    var au = g('audio');
+    au.className = 'demo';
+    au.innerHTML = '<div class="demo-col" style="flex:1">' +
+      '<div class="cap">G.audio.sfx(name) — клик по кнопке; sound unlock по первому жесту' +
+      (AU ? '' : ' · <span style="color:#d0453a">G.audio не найден</span>') + '</div>' +
+      '<div class="audio-grid" id="audio-grid"></div>' +
+      '<div class="btn-row" id="audio-tools"></div>' +
+      '</div>';
+    var names = (AU && AU.SFX_NAMES) ? AU.SFX_NAMES : ['click', 'pop', 'correct', 'wrong', 'scream'];
+    var grid = g('audio-grid');
+    names.forEach(function (nm) {
+      var b = document.createElement('button');
+      b.className = 'btn'; b.textContent = nm;
+      b.onclick = function () {
+        try { if (AU) { AU.unlock(); AU.sfx(nm); } } catch (e) { report(e); }
+      };
+      grid.appendChild(b);
+    });
+    var tools = g('audio-tools');
+    if (AU) {
+      var mute = document.createElement('button');
+      mute.className = 'btn btn--ghost';
+      mute.textContent = AU.muted ? 'ВКЛЮЧИТЬ ЗВУК' : 'MUTE';
+      mute.onclick = function () { AU.toggle(); mute.textContent = AU.muted ? 'ВКЛЮЧИТЬ ЗВУК' : 'MUTE'; };
+      tools.appendChild(mute);
+      var all = document.createElement('button');
+      all.className = 'btn btn--primary';
+      all.textContent = 'ПРОИГРАТЬ ПОДРЯД';
+      all.onclick = function () {
+        AU.unlock();
+        names.forEach(function (nm, i) { setTimeout(function () { AU.sfx(nm); }, i * 620); });
+      };
+      tools.appendChild(all);
+      var chip = document.createElement('span');
+      chip.className = 'muted-chip';
+      chip.textContent = 'muted=' + AU.muted + ' · ' + names.length + ' звуков';
+      tools.appendChild(chip);
+    }
+  }
+
+  // 9. paint
+  if (on('paints')) {
+    [['article', { mood: 'angry', glyph: 'ը' }], ['letter', { glyph: 'բ', mood: 'happy' }], ['police', { minister: true }], ['pigeon', {}], ['teacher', { mood: 'smug' }], ['student', { idx: 0, mood: 'panic' }]].forEach(function (p) {
+      var wrap = document.createElement('div'); wrap.className = 'cell';
+      var cv = document.createElement('canvas'); cv.width = 90; cv.height = 90;
+      cv.style.width = '90px'; cv.style.height = '90px';
+      wrap.appendChild(cv);
+      var b = document.createElement('b'); b.textContent = 'paint·' + p[0]; wrap.appendChild(b);
+      g('paints').appendChild(wrap);
+      try { A.paint(cv, p[0], p[1]); } catch (e) { report(e); }
+    });
+  }
+
+  // 10..15 zoom
+  if (on('zteacher')) ['neutral', 'suspicious', 'scream', 'calm', 'smug', 'tired', 'cosmic', 'proud', 'happy'].forEach(function (m) {
+    add(g('zteacher'), 250, 250, m, function (ctx, r, t) { A.drawTeacher(ctx, r, m, t); });
+  });
+  if (on('zstudents')) [['Толя', 0, 'neutral'], ['Толя', 0, 'panic'], ['Толя', 0, 'hide'], ['Толя', 0, 'dead'], ['Вика', 1, 'neutral'], ['Вика', 1, 'smug'], ['Вика', 1, 'panic'], ['Вика', 1, 'bored'], ['Гоша', 2, 'neutral'], ['Гоша', 2, 'hide'], ['Гоша', 2, 'scared'], ['Гоша', 2, 'dead']].forEach(function (d) {
+    add(g('zstudents'), 210, 210, d[0] + '·' + d[2], function (ctx, r, t) { A.drawStudent(ctx, r, d[1], d[2], t); });
+  });
+  if (on('zarticles')) {
+    ['idle', 'angry', 'run', 'proud', 'sleep', 'union', 'cry', 'happy', 'evil'].forEach(function (m) {
+      add(g('zarticles'), 200, 200, 'ը·' + m, function (ctx, r, t) { A.drawArticle(ctx, r, m, t, { glyph: 'ը' }); });
+    });
+    ['idle', 'proud', 'union', 'evil'].forEach(function (m) {
+      add(g('zarticles'), 200, 200, 'ն·' + m, function (ctx, r, t) { A.drawArticle(ctx, r, m, t, { glyph: 'ն' }); });
+    });
+  }
+  if (on('zletters')) ['բ', 'պ', 'փ', 'ռ', 'ր', 'ձ', 'ծ', 'ց', 'ը', 'ն'].forEach(function (gl, i) {
+    var m = lm[i % lm.length];
+    add(g('zletters'), 140, 140, gl + '·' + m, function (ctx, r, t) { A.drawLetter(ctx, r, gl, m, t); });
+  });
+  if (on('zprops')) {
+    A.drawPropNames.forEach(function (name) {
+      add(g('zprops'), 180, 180, name, function (ctx, r, t) { A.drawProp(ctx, name, r, t, {}); });
+    });
+    add(g('zprops'), 180, 180, 'police·министр', function (ctx, r, t) { A.drawProp(ctx, 'police', r, t, { minister: true }); });
+  }
+  if (on('zclass')) {
+    cell(g('zclass'), 800, 400, 'classroom 800x400', function (ctx, r, t) { A.drawClassroom(ctx, r.w, r.h, t, { boardText: 'ԳԻՐՔ' }); });
+    cell(g('zclass'), 360, 400, 'classroom 360x400', function (ctx, r, t) { A.drawClassroom(ctx, r.w, r.h, t, { boardText: 'ԳԻՐՔ' }); });
+  }
+
+  // первый жест = audio unlock (как в игре)
+  window.addEventListener('pointerdown', function once() { try { if (AU) AU.unlock(); } catch (e) {} window.removeEventListener('pointerdown', once); }, { once: true });
+
+  var start = performance.now();
+  function frame() {
+    var t = (performance.now() - start) / 1000;
+    for (var i = 0; i < draws.length; i++) draws[i](t);
+    requestAnimationFrame(frame);
+  }
+  frame();
+})();
+</script>
+</body>
+</html>

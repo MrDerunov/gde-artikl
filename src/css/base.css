@@ -1,0 +1,280 @@
+/* base.css — структура, HUD, FX, базовые компоненты. Тема — theme.css */
+:root{
+  --stage-h: clamp(146px, 29vh, 264px);
+  --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-arm: "Segoe UI", "Noto Sans Armenian", "DejaVu Sans", "Arial Unicode MS", sans-serif;
+  --font-mono: ui-monospace, "Cascadia Mono", "Courier New", monospace;
+  --chalk: #f2ecd9;
+  --board: #16342c;
+  --board-deep: #0c211c;
+  --board-light: #235247;
+  --accent: #ffd23f;
+  --warn: #ff5a5f;
+  --good: #6fe08a;
+  --ink: #1b1b1f;
+  --paper: #f7efdf;
+  --paper-2: #e8dcc4;
+  --muted: #9db3aa;
+  --wood: #6b4a2f;
+  --stamp: #d62828;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;padding:0;overflow:hidden}
+body{
+  background:#07110e;
+  color:var(--chalk);
+  font-family:var(--font-ui);
+  -webkit-text-size-adjust:100%;
+  -webkit-tap-highlight-color:transparent;
+  user-select:none;
+  -webkit-user-select:none;
+  touch-action:manipulation;
+  overscroll-behavior:none;
+}
+#app{
+  position:fixed; inset:0;
+  display:flex; flex-direction:column;
+  overflow:hidden;
+  isolation:isolate;
+  background:radial-gradient(120% 90% at 50% 0%, #1a3c33 0%, #0b1c17 70%, #06110d 100%);
+}
+.stage-wrap{position:relative; flex:0 0 auto; height:var(--stage-h); z-index:20; overflow:visible}
+#stage-canvas{position:absolute; inset:0; width:100%; height:100%; display:block}
+#stage-bubbles{position:absolute; inset:0; pointer-events:none; z-index:5}
+#scene-wrap{position:relative; flex:1 1 auto; min-height:0; overflow:hidden; z-index:10; transition:background .4s ease}
+#app.presenting .stage-wrap{ height: 100% }
+#app.presenting #scene-wrap{ display: none }
+#app.presenting .bubble{ font-size: clamp(14px, 3.2vw, 20px) }
+#app.presenting .bubble.urgent{ font-size: clamp(20px, 5.4vw, 42px) }
+#app.presenting-mobile .stage-wrap{ height: 42vh; }
+#app.presenting-mobile #scene-wrap{ display: none }
+#app.presenting-mobile .hud-screams{ display: none !important }
+.scene-root{position:absolute; inset:0; overflow:hidden}
+.scene-layer{position:absolute; inset:0; z-index:80; pointer-events:auto}
+#fx-layer{position:absolute; inset:0; z-index:120; pointer-events:none}
+#fx-layer .fx-interactive{pointer-events:auto}
+#hud{
+  position:absolute; z-index:300;
+  right:max(10px, env(safe-area-inset-right));
+  top:max(8px, env(safe-area-inset-top));
+  display:flex; gap:8px; align-items:center;
+}
+.hud-btn{
+  width:46px; height:46px; border-radius:50%;
+  border:2px solid rgba(242,236,217,.5);
+  background:rgba(8,22,18,.72);
+  color:var(--chalk);
+  font-size:19px; line-height:1;
+  display:flex; align-items:center; justify-content:center;
+  cursor:pointer; padding:0; touch-action:manipulation;
+  backdrop-filter:blur(3px);
+  box-shadow:0 2px 8px rgba(0,0,0,.45);
+}
+.hud-btn:active{transform:scale(.93)}
+.hud-btn.muted{opacity:.55}
+.hud-skip{background:rgba(70,20,20,.8); border-color:#ff8a8a; font-size:17px}
+.hud-screams{
+  position:absolute; z-index:290;
+  left:max(10px, env(safe-area-inset-left));
+  bottom:max(8px, env(safe-area-inset-bottom));
+  font:800 clamp(10px,2.5vw,13px)/1.1 var(--font-ui);
+  letter-spacing:.04em; text-transform:uppercase;
+  color:rgba(242,236,217,.66);
+  background:rgba(6,16,13,.35);
+  padding:4px 8px; border-radius:8px;
+  pointer-events:none;
+  display:none;
+}
+/* ====== кнопки ====== */
+.btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:8px;
+  min-height:48px; padding:10px 20px;
+  border-radius:12px; border:3px solid var(--ink);
+  background:var(--paper); color:var(--ink);
+  font:800 clamp(14px,3.2vw,18px)/1.12 var(--font-ui);
+  cursor:pointer; touch-action:manipulation;
+  box-shadow:0 5px 0 var(--ink);
+  transition:transform .07s ease, box-shadow .07s ease, filter .12s;
+  text-align:center;
+}
+.btn:active{transform:translateY(4px); box-shadow:0 1px 0 var(--ink)}
+.btn.primary{background:var(--accent)}
+.btn.danger{background:var(--warn); color:#fff}
+.btn.good{background:var(--good)}
+.btn.ghost{background:rgba(8,22,18,.5); color:var(--chalk); border-color:var(--chalk); box-shadow:0 4px 0 rgba(242,236,217,.75)}
+.btn.small{min-height:38px; padding:7px 14px; font-size:14px; box-shadow:0 3px 0 var(--ink)}
+.btn[disabled]{filter:grayscale(.8); opacity:.6; pointer-events:none}
+.paper{
+  background:var(--paper); color:var(--ink);
+  border:3px solid var(--ink); border-radius:10px;
+  box-shadow:0 6px 0 rgba(0,0,0,.35), inset 0 0 0 2px rgba(0,0,0,.06);
+}
+.arm{font-family:var(--font-arm)}
+.chalk{color:var(--chalk)}
+.mono{font-family:var(--font-mono)}
+/* ====== бабблы ====== */
+.bubble{
+  position:absolute; max-width:min(74vw, 520px);
+  background:var(--paper); color:#20211f;
+  border:3px solid #20211f; border-radius:13px;
+  padding:8px 12px 9px;
+  font:700 clamp(12.5px,2.7vw,16px)/1.25 var(--font-ui);
+  box-shadow:4px 5px 0 rgba(0,0,0,.4);
+  opacity:0; transform:translateY(8px) scale(.96);
+  transition:opacity .15s ease, transform .18s cubic-bezier(.2,1.4,.5,1);
+  pointer-events:none;
+  overflow-wrap:break-word;
+  z-index:6;
+}
+.bubble.show{opacity:1; transform:none}
+.bubble .who{
+  display:block; margin-bottom:2px;
+  font:800 9.5px/1.1 var(--font-ui);
+  letter-spacing:.1em; text-transform:uppercase;
+  opacity:.62;
+}
+.bubble.teacher{left:2%; top:3%; border-color:#8c2418; background:#fbf3dc}
+.bubble.teacher .who{color:#8c2418}
+.bubble.tolya{left:36%; bottom:30%; border-color:#2b5f9e; background:#eaf2ff}
+.bubble.vika{left:49%; bottom:30%; border-color:#b3387a; background:#ffeaf5}
+.bubble.gosha{right:2%; bottom:30%; border-color:#5a6b5f; background:#eef3ec}
+.bubble.article{left:36%; top:16%; border-color:#a2700a; background:#fff6cf}
+.bubble.police{right:2%; top:3%; border-color:#1d3a63; background:#e9effa}
+.bubble.system{
+  left:8%; top:8%; max-width:84%;
+  background:#06110d; color:#8ff0b8;
+  border-color:#2c6c4a; font-family:var(--font-mono);
+  font-weight:600; letter-spacing:.02em;
+}
+.bubble.urgent{
+  font-size:clamp(17px,4.6vw,30px);
+  letter-spacing:.01em;
+  padding:10px 16px;
+  box-shadow:6px 7px 0 rgba(0,0,0,.5);
+}
+.bubble.urgent .who{font-size:11px}
+@media (max-width:520px){
+  .bubble.tolya{left:33%}
+  .bubble.vika{left:46%; right:2%}
+  .bubble.gosha{right:2%; bottom:44%}
+}
+/* ====== FX ====== */
+@keyframes gshake{
+  0%,100%{transform:translate(0,0) rotate(0)}
+  12%{transform:translate(-7px,4px) rotate(-.5deg)}
+  25%{transform:translate(6px,-5px) rotate(.5deg)}
+  38%{transform:translate(-5px,-3px) rotate(-.4deg)}
+  52%{transform:translate(5px,5px) rotate(.4deg)}
+  68%{transform:translate(-4px,2px) rotate(-.25deg)}
+  82%{transform:translate(3px,-2px) rotate(.2deg)}
+}
+@keyframes gshake-hard{
+  0%,100%{transform:translate(0,0) rotate(0)}
+  10%{transform:translate(-14px,8px) rotate(-1.2deg)}
+  24%{transform:translate(12px,-10px) rotate(1deg)}
+  38%{transform:translate(-11px,-6px) rotate(-.9deg)}
+  52%{transform:translate(10px,10px) rotate(.8deg)}
+  68%{transform:translate(-8px,4px) rotate(-.5deg)}
+  84%{transform:translate(6px,-3px) rotate(.3deg)}
+}
+.fx-shake{animation:gshake .36s linear}
+.fx-shake-hard{animation:gshake-hard .46s linear}
+@keyframes gGlitch{
+  0%{filter:none}
+  20%{filter:hue-rotate(35deg) saturate(2.4) contrast(1.15); transform:translateX(-3px)}
+  40%{filter:invert(.12) saturate(1.2); transform:translateX(3px)}
+  60%{filter:hue-rotate(-25deg); transform:translateY(2px)}
+  80%{filter:contrast(1.4); transform:translateX(-1px)}
+  100%{filter:none; transform:none}
+}
+.fx-glitch{animation:gGlitch .32s steps(2) infinite}
+.fx-flash-el{position:absolute; inset:0; pointer-events:none; animation:fxFlash .22s ease-out forwards}
+@keyframes fxFlash{0%{opacity:.92}100%{opacity:0}}
+.fx-burst-char{
+  position:absolute; font:900 18px/1 var(--font-ui);
+  pointer-events:none; will-change:transform, opacity;
+  text-shadow:0 2px 0 rgba(0,0,0,.35);
+}
+.fx-card-wrap{
+  position:absolute; inset:0; z-index:160;
+  display:flex; align-items:center; justify-content:center;
+  background:rgba(4,10,8,.8);
+  padding:18px;
+  pointer-events:auto;
+  animation:fxCardIn .18s ease-out;
+}
+.fx-card{
+  max-width:min(90vw,760px);
+  background:var(--paper); color:#1c1c1c;
+  border:4px solid #1c1c1c; border-radius:6px;
+  padding:clamp(16px,4vw,34px) clamp(18px,4.5vw,40px);
+  box-shadow:0 14px 0 rgba(0,0,0,.35);
+  transform:rotate(-1deg);
+  text-align:center;
+}
+.fx-card h2{margin:0; font:900 clamp(20px,5.2vw,42px)/1.05 var(--font-ui); letter-spacing:.02em}
+.fx-card .sub{margin:10px 0 0; font:600 clamp(13px,3vw,17px)/1.35 var(--font-ui); opacity:.8}
+.fx-card-wrap.out{animation:fxCardOut .2s ease-in forwards}
+@keyframes fxCardIn{from{opacity:0}to{opacity:1}}
+@keyframes fxCardOut{to{opacity:0}}
+.fx-stamp{
+  position:absolute; left:50%; top:36%;
+  transform:translate(-50%,-50%) rotate(-8deg) scale(2.4);
+  border:6px solid var(--stamp); color:var(--stamp);
+  padding:10px 20px; border-radius:8px;
+  font:900 clamp(16px,4.4vw,32px)/1.12 var(--font-ui);
+  letter-spacing:.06em; text-transform:uppercase;
+  text-align:center; max-width:88vw;
+  background:rgba(255,255,255,.06);
+  pointer-events:none; z-index:170;
+  animation:stampSlam .3s cubic-bezier(.16,1.7,.4,1) forwards, stampFade .4s ease 1.35s forwards;
+}
+@keyframes stampSlam{
+  0%{opacity:0; transform:translate(-50%,-50%) rotate(-14deg) scale(2.6)}
+  55%{opacity:1; transform:translate(-50%,-50%) rotate(-8deg) scale(.94)}
+  100%{opacity:1; transform:translate(-50%,-50%) rotate(-8deg) scale(1)}
+}
+@keyframes stampFade{to{opacity:0; transform:translate(-50%,-50%) rotate(-8deg) scale(1.08)}}
+.fx-overlay{position:absolute; inset:0; z-index:155; background:#000; pointer-events:auto}
+.fx-overlay.silence{animation:silenceIn .3s ease-out both}
+@keyframes silenceIn{from{opacity:0}to{opacity:1}}
+.fx-window{
+  position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+  width:min(92vw,560px); max-height:82vh; overflow:auto;
+  background:#dcd7c8; color:#161616;
+  border:3px solid #161616; border-radius:4px;
+  box-shadow:0 16px 0 rgba(0,0,0,.4);
+  z-index:180; pointer-events:auto;
+  font-family:var(--font-mono);
+  animation:winIn .14s ease-out;
+}
+@keyframes winIn{from{transform:translate(-50%,-46%) scale(.96); opacity:0}}
+.fx-winbar{
+  display:flex; align-items:center; justify-content:space-between;
+  background:#1f3a63; color:#fff;
+  padding:7px 10px; font:700 12px/1 var(--font-ui); letter-spacing:.05em;
+}
+.fx-winbar .dots{display:flex; gap:5px}
+.fx-winbar .dot{width:10px; height:10px; border-radius:50%; background:#c9c9c9; border:1px solid #0c0c0c}
+.fx-winbody{padding:16px 16px 18px; font:600 clamp(13px,3vw,16px)/1.4 var(--font-mono)}
+.fx-winbtns{display:flex; flex-wrap:wrap; gap:10px; justify-content:flex-end; padding:0 16px 16px}
+.fx-winbtn{
+  min-height:42px; padding:8px 16px;
+  font:700 14px/1 var(--font-ui);
+  border:2px solid #161616; background:#efeadb; color:#161616;
+  border-radius:3px; cursor:pointer; box-shadow:0 3px 0 #161616;
+  touch-action:manipulation;
+}
+.fx-winbtn.primary{background:var(--accent)}
+.fx-winbtn.runaway{transition:transform .15s ease}
+.fx-wrap-window{position:absolute; inset:0; background:rgba(0,0,0,.5); z-index:175; pointer-events:auto}
+/* ====== мелочи ====== */
+.visually-hidden{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0)}
+.scene-error-badge{
+  position:absolute; left:50%; bottom:14px; transform:translateX(-50%);
+  background:#3a0f0f; color:#ffb4b4; border:2px solid #ff8a8a;
+  padding:8px 14px; border-radius:10px;
+  font:700 12px/1.2 var(--font-ui); z-index:400; pointer-events:none;
+  max-width:92vw;
+}
+@media (max-height:520px){ :root{ --stage-h:144px; } }
